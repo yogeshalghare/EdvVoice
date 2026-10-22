@@ -1,0 +1,70 @@
+text,category
+"tap in bathroom broken, no water coming since two days",Hostel
+"warden not giving permission to stay out late for project work",Hostel
+"my room is on the top floor and it leaks whenever it rains",Hostel
+"mosquito problem is very bad at night, nobody sprays anything",Hostel
+"the boys hostel washroom smells terrible, cleaning is not done",Hostel
+"geyser stopped heating, we are bathing in cold water in winter",Hostel
+"someone took my bucket and the warden says it is not his problem",Hostel
+"corridor bulb fused, it is completely dark near my room at night",Hostel
+"hostel gate closes at 9 and I have practicals till 9:30, what do I do",Hostel
+"I requested a room change twice and still waiting for reply",Hostel
+"bed given to me is broken from one side and makes noise",Hostel
+"no drinking water on our floor, we have to go down every time",Hostel
+"fan in 301 makes a loud noise and the regulator does not work",Infrastructure
+"projector keeps switching off during lectures",Infrastructure
+"lift has been out of service for over a week now",Infrastructure
+"the benches in our classroom are falling apart",Infrastructure
+"there is a crack in the wall near the staircase, looks unsafe",Infrastructure
+"toilets on the second floor are not cleaned regularly",Infrastructure
+"no parking space, bikes are kept on the road outside",Infrastructure
+"AC in the library stopped working and it is very hot inside",Infrastructure
+"wires are hanging loose in the lab, someone can get a shock",Infrastructure
+"the ground is full of water after rain and we cannot use it",Infrastructure
+"dustbins are overflowing near the canteen",Infrastructure
+"main door handle of the department is broken",Infrastructure
+"got wrong marks in DBMS internal, I scored more than shown",Academic
+"result still not out and admission deadline is near",Academic
+"attendance portal shows 62 but I attended almost all lectures",Academic
+"professor did not complete half the syllabus before exams",Academic
+"applied for revaluation one month back, no update",Academic
+"my name is printed wrong on the bonafide certificate",Academic
+"scholarship money has not come to my account yet",Academic
+"two practical exams are on the same day and time",Academic
+"admit card not generated even after paying the fee",Academic
+"assignment submitted but portal shows pending",Academic
+"project guide not allotted and submission is next month",Academic
+"question paper had topics we never studied in class",Academic
+"timetable changed three times this week without notice",Academic
+"food was cold again today and the dal was watery",Dining
+"found a hair in my plate at lunch",Dining
+"canteen charges more than the printed rate",Dining
+"mess quality has gone down a lot this semester",Dining
+"got stomach ache after eating in the canteen yesterday",Dining
+"dinner is served very late and we are hungry by then",Dining
+"the same menu repeats every single week",Dining
+"plates are not washed properly, I can see stains",Dining
+"roti was hard and could not be eaten",Dining
+"kitchen area looks dirty whenever we pass by",Dining
+"mess charged me for the month I was at home",Dining
+"canteen staff talks rudely when we ask for something",Dining
+"wifi drops every ten minutes in the library",IT Support
+"cannot login to the portal, it says invalid credentials",IT Support
+"internet is very slow during online lectures",IT Support
+"college site does not open on my laptop",IT Support
+"erp account locked after wrong password attempts",IT Support
+"printer in the lab has not worked for a week",IT Support
+"lab computers hang whenever we open the compiler",IT Support
+"password reset mail is not coming to my inbox",IT Support
+"portal shows my branch wrong in the profile",IT Support
+"fee payment page gives error at the last step",IT Support
+"required software is not installed on the lab systems",IT Support
+"server was down exactly when results came out",IT Support
+"wifi not reaching the last classroom in B block",IT Support
+"water is leaking from the ceiling in the classroom",Infrastructure
+"the water we get in the mess is not filtered properly",Dining
+"hostel mess is serving bad food since last week",Dining
+"exam fee receipt not generated after online payment",Academic
+"hostel fee payment page is not loading on the portal",IT Support
+"no water supply in the washroom of the main building",Infrastructure
+"my hostel room fan is not working at all",Hostel

@@ -1,0 +1,46 @@
+# Deliberately unpinned.
+#
+# Exact pins look safer but age badly: a pin that predates your Python
+# version sends pip off to compile the package from source, which fails on a
+# machine with no Rust toolchain. Python 3.14 hit exactly that with pydantic.
+#
+# These libraries follow semantic versioning and the code here uses their
+# stable APIs, so tracking current releases is the lower-risk option.
+# If you ever need to freeze what works, run:  pip freeze > requirements.lock
+
+# Web framework
+fastapi>=0.115
+uvicorn[standard]>=0.32
+python-multipart>=0.0.12
+
+# Data + validation
+pydantic[email]>=2.9
+pydantic-settings>=2.6
+sqlalchemy>=2.0.36
+
+# Auth
+pyjwt>=2.9
+bcrypt>=4.2
+
+# Services
+httpx>=0.27
+cloudinary>=1.41
+
+# Config
+python-dotenv>=1.0
+
+# PostgreSQL driver (unused when DATABASE_URL points at SQLite)
+psycopg[binary]>=3.2.10
+
+# --- Machine learning ------------------------------------------------------
+# Runs the trained complaint classifier in ml/model/classifier.joblib.
+# Only these two are needed to PREDICT — pandas is used solely by
+# train_model.py, so it is deliberately left out to keep the build fast and
+# the memory footprint small on a 512MB instance.
+# services/nlp.py still falls back to keyword rules if either is missing,
+# so a failed install degrades the app rather than breaking it.
+scikit-learn>=1.5
+joblib>=1.4
+
+# Training only (not installed in production):
+#   pip install pandas

@@ -1,0 +1,62 @@
+# Render Blueprint — creates the API and its database in one go.
+#
+# In the Render dashboard: New > Blueprint, point it at this repository.
+# This file must stay at the repository root — that is where Render looks
+# for it. rootDir below is what sends the build into backend/.
+#
+# Heads up on the free database: Render deletes it 30 days after creation,
+# with a 14-day grace period after that. Create it close to when you need it,
+# take a pg_dump backup before any demo, and if it does expire, switching to
+# Neon is one change to DATABASE_URL.
+
+services:
+  - type: web
+    name: edvvoice-api
+    runtime: python
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    # Render supplies $PORT — binding to anything else makes the deploy hang.
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    envVars:
+      # Render reads ONLY this variable or a .python-version file — it
+      # ignores runtime.txt, which is a Heroku convention. Without a version
+      # pinned, Render picks its own default, and the newest Python releases
+      # often have no prebuilt packages yet, so pip tries to compile from
+      # source and the build fails. Must be a full x.y.z version.
+      - key: PYTHON_VERSION
+        value: "3.12.7"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: edvvoice-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true          # Render generates a strong one
+      - key: APP_URL
+        sync: false                  # your Vercel URL, set in the dashboard
+      - key: CORS_ORIGINS
+        sync: false
+      # Leave false until a domain is verified in Resend. With it true and
+      # only the shared sender available, no visitor can finish signing up.
+      - key: REQUIRE_EMAIL_VERIFICATION
+        value: "false"
+      - key: RESEND_API_KEY
+        sync: false
+      - key: RESEND_FROM
+        value: EdvVoice <onboarding@resend.dev>
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: ADMIN_EMAIL
+        sync: false                  # remove once the admin account exists
+      - key: ADMIN_PASSWORD
+        sync: false
+
+databases:
+  - name: edvvoice-db
+    plan: free
+    databaseName: grievance_system
