@@ -51,6 +51,15 @@ services:
         sync: false
       - key: CLOUDINARY_API_SECRET
         sync: false
+      # Server-side speech to text. Without it the app still works, but
+      # voice only transcribes in browsers whose own speech service works.
+      # Set either provider; Cloudflare wins if both are present.
+      - key: CLOUDFLARE_ACCOUNT_ID
+        sync: false
+      - key: CLOUDFLARE_API_TOKEN
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
       - key: ADMIN_EMAIL
         sync: false                  # remove once the admin account exists
       - key: ADMIN_PASSWORD

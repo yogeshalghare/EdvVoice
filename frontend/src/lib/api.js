@@ -123,6 +123,23 @@ export const api = {
     return upload('/uploads', form)
   },
 
+  /**
+   * Transcribe a recording on the server.
+   *
+   * Used when the browser's own speech recognition produced nothing —
+   * Firefox has none at all, and a Chrome whose speech service is
+   * unreachable aborts without a word of transcript.
+   */
+  transcribeAudio: (audioBlob) => {
+    // Whisper works out the container from the extension, and browsers do
+    // not agree on one: Chrome and Firefox record webm, Safari mp4.
+    const subtype = (audioBlob.type || 'audio/webm').split('/')[1] || 'webm'
+    const extension = subtype.split(';')[0].replace('x-', '') || 'webm'
+    const form = new FormData()
+    form.append('file', audioBlob, `recording.${extension}`)
+    return upload('/uploads/transcribe', form)
+  },
+
   /** Ask the server whether a transcript reads as a real complaint. */
   validateComplaint: (transcript) =>
     request('/complaints/validate', { method: 'POST', body: { transcript } }),

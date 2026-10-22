@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { Mic, Square, RotateCcw, Play, Pause } from 'lucide-react'
+import { Mic, Square, RotateCcw, Play, Pause, LoaderCircle, FileText } from 'lucide-react'
+import { api } from '../lib/api'
 
 const MAX_SECONDS = 180
 
@@ -22,6 +23,7 @@ export default function VoiceRecorder({ transcript, onTranscript, onAudio }) {
   const [audioUrl, setAudioUrl] = useState(null)
   const [playing, setPlaying] = useState(false)
   const [error, setError] = useState('')
+  const [transcribing, setTranscribing] = useState(false)
 
   const recognitionRef = useRef(null)
   const recorderRef = useRef(null)
@@ -30,6 +32,7 @@ export default function VoiceRecorder({ transcript, onTranscript, onAudio }) {
   const audioRef = useRef(null)
   const finalRef = useRef('')
   const interimRef = useRef('')
+  const blobRef = useRef(null)
   // State is stale inside the recognition callbacks, which outlive the render
   // that created them, so the restart logic reads this instead.
   const wantedRef = useRef(false)
@@ -43,6 +46,30 @@ export default function VoiceRecorder({ transcript, onTranscript, onAudio }) {
     try { recognitionRef.current?.stop() } catch { /* already stopped */ }
     if (recorderRef.current?.state === 'recording') recorderRef.current.stop()
     recorderRef.current?.stream?.getTracks().forEach((t) => t.stop())
+  }
+
+  /**
+   * Transcribe the recording on the server.
+   *
+   * This is what makes voice work at all in Firefox, and on any Chrome
+   * whose speech service cannot be reached. The student never has to know
+   * which route produced their words.
+   */
+  async function transcribeOnServer(blob) {
+    if (!blob || !blob.size) return
+    setTranscribing(true)
+    setError('')
+    try {
+      const { transcript: text } = await api.transcribeAudio(blob)
+      if (text) {
+        finalRef.current = `${text.trim()} `
+        onTranscript(finalRef.current)
+      }
+    } catch (err) {
+      setError(`${err.message} Your audio is saved — type the complaint in the review box.`)
+    } finally {
+      setTranscribing(false)
+    }
   }
 
   /** Keep whatever has been heard so far, finalised or not. */
@@ -74,7 +101,11 @@ export default function VoiceRecorder({ transcript, onTranscript, onAudio }) {
       const blob = new Blob(chunksRef.current, { type: recorder.mimeType || 'audio/webm' })
       setAudioUrl(URL.createObjectURL(blob))
       onAudio?.(blob)
+      blobRef.current = blob
       stream.getTracks().forEach((t) => t.stop())
+      // The browser gets first go because it is instant. If it produced
+      // nothing, the recording is all we have, so send it to the server.
+      if (!finalRef.current.trim()) transcribeOnServer(blob)
     }
     recorder.start()
     recorderRef.current = recorder
@@ -162,9 +193,8 @@ export default function VoiceRecorder({ transcript, onTranscript, onAudio }) {
     stopEverything()
     setRecording(false)
     setInterim('')
-    if (SpeechRecognition && !heardRef.current && !error) {
-      setError('Nothing was transcribed — the microphone may be picking up another device. Your audio is saved; type the complaint in the review box.')
-    }
+    // Nothing is said about the browser failing to transcribe: the server
+    // is about to try, and a warning the student cannot act on is noise.
   }
 
   function reset() {
@@ -192,7 +222,11 @@ export default function VoiceRecorder({ transcript, onTranscript, onAudio }) {
 
       <div className="flex flex-col items-center py-4">
         <h3 className="text-xl font-semibold text-ink">
-          {recording ? 'Listening…' : audioUrl ? 'Recording saved' : 'Tap to start recording'}
+          {recording
+            ? 'Listening…'
+            : transcribing
+              ? 'Writing it out…'
+              : audioUrl ? 'Recording saved' : 'Tap to start recording'}
         </h3>
 
         <div className="relative my-7">
@@ -218,6 +252,13 @@ export default function VoiceRecorder({ transcript, onTranscript, onAudio }) {
 
         {interim && <p className="mt-4 max-w-lg text-center text-sm italic text-ink-mute">{interim}</p>}
 
+        {transcribing && (
+          <p className="mt-4 inline-flex items-center gap-2 text-sm text-purple-600">
+            <LoaderCircle className="h-4 w-4 animate-spin" />
+            Transcribing your recording — a few seconds.
+          </p>
+        )}
+
         {audioUrl && !recording && (
           <div className="mt-6 flex items-center gap-3">
             <audio ref={audioRef} src={audioUrl} onEnded={() => setPlaying(false)} className="hidden" />
@@ -231,6 +272,14 @@ export default function VoiceRecorder({ transcript, onTranscript, onAudio }) {
             >
               {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
               {playing ? 'Pause' : 'Play back'}
+            </button>
+            <button
+              type="button"
+              onClick={() => transcribeOnServer(blobRef.current)}
+              disabled={transcribing}
+              className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-purple-600 hover:bg-purple-50 disabled:opacity-50"
+            >
+              <FileText className="h-4 w-4" /> Transcribe again
             </button>
             <button
               type="button"

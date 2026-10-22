@@ -16,7 +16,7 @@ from sqlalchemy import select
 from config import settings
 from database import DATABASE_URL, Base, SessionLocal, engine, ensure_columns
 from routers import auth, complaints, uploads
-from services import nlp
+from services import nlp, transcribe
 from security import hash_password
 
 # Importing models registers every table on Base before create_all runs.
@@ -102,5 +102,10 @@ def health():
         # True when the trained classifier loaded; False means the app is
         # running on keyword rules. Check this after a deploy.
         "ml_classifier": nlp.model_is_active(),
+        # True when the server can transcribe a recording itself, which is
+        # what lets voice work in browsers that cannot. The name says which
+        # provider is wired up.
+        "transcription": transcribe.is_configured(),
+        "transcription_provider": transcribe.provider_name(),
         "origins": settings.allowed_origins,
     }

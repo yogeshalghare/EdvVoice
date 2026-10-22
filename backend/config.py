@@ -41,6 +41,13 @@ class Settings(BaseSettings):
     cloudinary_api_key: str = ""
     cloudinary_api_secret: str = ""
 
+    # Server-side speech to text, used when the browser cannot transcribe.
+    # Set either provider; Cloudflare is preferred if both are present.
+    # Without one the app still works — students type instead.
+    cloudflare_account_id: str = ""
+    cloudflare_api_token: str = ""
+    groq_api_key: str = ""
+
     @property
     def allowed_origins(self) -> list[str]:
         origins = {
