@@ -29,14 +29,30 @@ export default function VoiceRecorder({ transcript, onTranscript, onAudio }) {
   const timerRef = useRef(null)
   const audioRef = useRef(null)
   const finalRef = useRef('')
+  const interimRef = useRef('')
+  // State is stale inside the recognition callbacks, which outlive the render
+  // that created them, so the restart logic reads this instead.
+  const wantedRef = useRef(false)
+  const heardRef = useRef(false)
 
   useEffect(() => () => stopEverything(), [])
 
   function stopEverything() {
+    wantedRef.current = false
     clearInterval(timerRef.current)
     try { recognitionRef.current?.stop() } catch { /* already stopped */ }
     if (recorderRef.current?.state === 'recording') recorderRef.current.stop()
     recorderRef.current?.stream?.getTracks().forEach((t) => t.stop())
+  }
+
+  /** Keep whatever has been heard so far, finalised or not. */
+  function commitInterim() {
+    const pending = interimRef.current.trim()
+    if (!pending) return
+    finalRef.current += `${pending} `
+    interimRef.current = ''
+    setInterim('')
+    onTranscript(finalRef.current)
   }
 
   async function start() {
@@ -64,28 +80,11 @@ export default function VoiceRecorder({ transcript, onTranscript, onAudio }) {
     recorderRef.current = recorder
 
     if (SpeechRecognition) {
-      const recognition = new SpeechRecognition()
-      recognition.lang = LANGUAGE
-      recognition.continuous = true
-      recognition.interimResults = true
-      recognition.onresult = (event) => {
-        let live = ''
-        for (let i = event.resultIndex; i < event.results.length; i += 1) {
-          const chunk = event.results[i][0].transcript
-          if (event.results[i].isFinal) finalRef.current += `${chunk.trim()} `
-          else live += chunk
-        }
-        setInterim(live)
-        onTranscript(finalRef.current)
-      }
-      recognition.onerror = (e) => {
-        if (e.error === 'no-speech') return
-        setError('Live transcription stopped, but the audio is still recording.')
-      }
-      recognition.start()
-      recognitionRef.current = recognition
+      heardRef.current = false
+      wantedRef.current = true
+      startRecognition()
     } else {
-      setError('This browser cannot transcribe live. The audio is recorded — type the details below.')
+      setError('This browser cannot transcribe live. The audio is still recorded — type the details in the review box.')
     }
 
     setSeconds(0)
@@ -98,15 +97,83 @@ export default function VoiceRecorder({ transcript, onTranscript, onAudio }) {
     }, 1000)
   }
 
+  /**
+   * Chrome ends a recognition session on its own after a short silence, even
+   * with continuous = true, and simply stops transcribing from then on. So
+   * every session is restarted for as long as the student is still recording.
+   */
+  function startRecognition() {
+    const recognition = new SpeechRecognition()
+    recognition.lang = LANGUAGE
+    recognition.continuous = true
+    recognition.interimResults = true
+
+    recognition.onresult = (event) => {
+      let live = ''
+      for (let i = event.resultIndex; i < event.results.length; i += 1) {
+        const chunk = event.results[i][0].transcript
+        if (event.results[i].isFinal) finalRef.current += `${chunk.trim()} `
+        else live += chunk
+      }
+      heardRef.current = true
+      interimRef.current = live
+      setInterim(live)
+      onTranscript(finalRef.current)
+    }
+
+    recognition.onerror = (e) => {
+      // Silence is not a failure — the restart below picks it back up.
+      if (e.error === 'no-speech' || e.error === 'aborted') return
+      if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
+        wantedRef.current = false
+        setError('Chrome blocked the microphone for transcription. Allow it from the icon in the address bar, then record again.')
+        return
+      }
+      if (e.error === 'network') {
+        wantedRef.current = false
+        setError('Transcription needs an internet connection — Chrome sends the audio to Google. The audio is still recorded; type the details in the review box.')
+        return
+      }
+      wantedRef.current = false
+      setError(`Live transcription stopped (${e.error}). The audio is still recorded — type the details in the review box.`)
+    }
+
+    recognition.onend = () => {
+      commitInterim()
+      if (!wantedRef.current) return
+      try {
+        recognition.start()
+      } catch {
+        // Chrome refuses a restart that lands too soon; try once more.
+        setTimeout(() => { if (wantedRef.current) { try { recognition.start() } catch { /* give up */ } } }, 250)
+      }
+    }
+
+    try {
+      recognition.start()
+      recognitionRef.current = recognition
+    } catch {
+      setError('Live transcription could not start. The audio is still recorded — type the details in the review box.')
+    }
+  }
+
   function stop() {
+    commitInterim()          // never throw away what was heard
     stopEverything()
     setRecording(false)
     setInterim('')
+    if (SpeechRecognition && !heardRef.current && !error) {
+      setError('Nothing was transcribed — the microphone may be picking up another device. Your audio is saved; type the complaint in the review box.')
+    }
   }
 
   function reset() {
-    stop()
+    stopEverything()
+    setRecording(false)
+    setError('')
     finalRef.current = ''
+    interimRef.current = ''
+    setInterim('')
     setSeconds(0)
     setAudioUrl(null)
     onTranscript('')
